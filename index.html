@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UZI-Skill 股票分析报告</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#1e40af',
+                        bull: '#10b981',
+                        bear: '#ef4444',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <header class="bg-white shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
+            <h1 class="text-3xl font-bold text-gray-900 flex items-center">
+                <i class="fa fa-line-chart text-primary mr-3"></i>
+                UZI-Skill 股票深度分析报告库
+            </h1>
+            <p class="mt-2 text-gray-600">基于65位投资大佬评审团的专业分析</p>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+        <!-- 搜索栏 -->
+        <div class="mb-8">
+            <div class="relative">
+                <input 
+                    type="text" 
+                    id="searchInput"
+                    placeholder="搜索股票代码/名称/日期..." 
+                    class="w-full px-4 py-3 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                    onkeyup="filterReports()"
+                >
+                <i class="fa fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+            </div>
+        </div>
+
+        <!-- 统计卡片 -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+                <div class="flex items-center">
+                    <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-primary">
+                        <i class="fa fa-file-text-o text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm text-gray-500">总报告数</p>
+                        <p class="text-2xl font-bold text-gray-900" id="totalReports">0</p>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+                <div class="flex items-center">
+                    <div class="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center text-bull">
+                        <i class="fa fa-arrow-up text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm text-gray-500">最新报告日期</p>
+                        <p class="text-2xl font-bold text-gray-900" id="latestDate">-</p>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+                <div class="flex items-center">
+                    <div class="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center text-purple-600">
+                        <i class="fa fa-users text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm text-gray-500">覆盖股票数</p>
+                        <p class="text-2xl font-bold text-gray-900" id="totalStocks">0</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 报告列表 -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h2 class="text-xl font-semibold text-gray-900">报告列表</h2>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">股票代码</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">报告日期</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200" id="reportsTable">
+                        <!-- 动态生成内容 -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <footer class="bg-white border-t border-gray-200 mt-12">
+        <div class="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
+            <p class="text-center text-gray-500 text-sm">
+                Powered by UZI-Skill | 股票深度分析工具
+            </p>
+        </div>
+    </footer>
+
+    <script>
+        // 报告数据
+        const reports = [
+            {
+                ticker: "000657.SZ",
+                date: "2026-07-16",
+                path: "./000657.SZ_20260716/full-report-standalone.html"
+            }
+            // 新报告会自动添加到这里
+        ];
+
+        // 初始化页面
+        function init() {
+            renderReports(reports);
+            updateStats();
+        }
+
+        // 渲染报告列表
+        function renderReports(data) {
+            const table = document.getElementById('reportsTable');
+            table.innerHTML = '';
+            
+            if (data.length === 0) {
+                table.innerHTML = `
+                    <tr>
+                        <td colspan="3" class="px-6 py-12 text-center text-gray-500">
+                            <i class="fa fa-folder-open-o text-4xl mb-3"></i>
+                            <p>暂无报告数据</p>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            data.forEach(report => {
+                const row = document.createElement('tr');
+                row.className = 'hover:bg-gray-50 transition-colors report-row';
+                row.setAttribute('data-search', `${report.ticker} ${report.date}`);
+                
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm font-medium text-gray-900">${report.ticker}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm text-gray-500">${report.date}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <a 
+                            href="${report.path}" 
+                            target="_blank"
+                            class="text-primary hover:text-blue-800 flex items-center"
+                        >
+                            <i class="fa fa-external-link mr-1"></i> 查看报告
+                        </a>
+                    </td>
+                `;
+                table.appendChild(row);
+            });
+        }
+
+        // 更新统计数据
+        function updateStats() {
+            document.getElementById('totalReports').textContent = reports.length;
+            
+            const uniqueStocks = new Set(reports.map(r => r.ticker.split('.')[0])).size;
+            document.getElementById('totalStocks').textContent = uniqueStocks;
+            
+            if (reports.length > 0) {
+                const latestDate = reports.sort((a, b) => new Date(b.date) - new Date(a.date))[0].date;
+                document.getElementById('latestDate').textContent = latestDate;
+            }
+        }
+
+        // 搜索过滤
+        function filterReports() {
+            const input = document.getElementById('searchInput');
+            const filter = input.value.toUpperCase();
+            const rows = document.getElementsByClassName('report-row');
+            
+            for (let i = 0; i < rows.length; i++) {
+                const searchText = rows[i].getAttribute('data-search').toUpperCase();
+                if (searchText.indexOf(filter) > -1) {
+                    rows[i].style.display = "";
+                } else {
+                    rows[i].style.display = "none";
+                }
+            }
+        }
+
+        // 页面加载完成初始化
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
